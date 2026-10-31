@@ -101,7 +101,7 @@ jobs:
             ARGS="$ARGS --mtk $(sed -n 's/^GEN_MTK_RAMDISK_NAME := //p' $G)"
           fi
           echo "fix_ramdisk args: $ARGS"
-          python3 "$GITHUB_WORKSPACE"/tools/fix_ramdisk.py "$IMG" $ARGS
+          python3 "$GITHUB_WORKSPACE"/tools/fix_ramdisk.py "$IMG" $ARGS --stock "$GITHUB_WORKSPACE"/stock/recovery.img
 
       - name: Package for Odin
         run: |
@@ -111,6 +111,15 @@ jobs:
           test -n "$IMG"
           cp "$IMG" "$GITHUB_WORKSPACE/out/recovery.img"
           cd "$GITHUB_WORKSPACE/out"
+          # the stock recovery partition is exactly this big (size of the dumped recovery.img)
+          LIMIT=$(stat -c %s ../stock/recovery.img)
+          SIZE=$(stat -c %s recovery.img)
+          echo "recovery.img = $SIZE bytes, partition = $LIMIT bytes"
+          echo "### Size: $SIZE / $LIMIT bytes" >> "$GITHUB_STEP_SUMMARY"
+          if [ $((SIZE + 64)) -gt "$LIMIT" ]; then
+            echo "::error::recovery.img ($SIZE) does not fit the recovery partition ($LIMIT). Not packaging an Odin tar. Shrink TWRP (fewer languages/tools)."
+            exit 1
+          fi
           # Samsung bootloaders want this marker at the end of boot-type images
           printf 'SEANDROIDENFORCE' >> recovery.img
           FILES="recovery.img"

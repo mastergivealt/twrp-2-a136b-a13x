@@ -82,6 +82,18 @@ if raw:
     for n in names:
         if re.search(r'(^init|recovery|fstab|sepolicy|selinux|\.rc$|modules|\.ko$|vendor_boot|lib/modules)', n) and n.count('/') < 5:
             print('  ', n)
+try:
+    kraw = kernel[512:] if kernel[:4] == MTK else kernel
+    kdec = zlib.decompressobj(31).decompress(kraw) if kraw[:2] == b'\x1f\x8b' else kraw
+    print('kernel arch:', 'arm64 (Image)' if kdec[0x38:0x3c] == b'ARM\x64' else 'not a plain arm64 Image (arm32 or other)')
+except Exception as e:
+    print('kernel arch: unknown', e)
+if raw:
+    nm = newc_names(raw)
+    print('userspace: lib64 entries=%d, lib entries=%d, linker64=%s, linker=%s' % (
+        sum(1 for n in nm if '/lib64/' in n or n.startswith('lib64/')),
+        sum(1 for n in nm if ('/lib/' in n or n.startswith('lib/')) and '/lib64/' not in n),
+        any(n.endswith('bin/linker64') for n in nm), any(n.endswith('bin/linker') for n in nm)))
 cfg = ikconfig(kernel)
 if cfg:
     print('== kernel config (embedded)')
