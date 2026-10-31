@@ -46,6 +46,7 @@ TARGET_USERIMAGES_USE_EXT4 := true
 TARGET_USERIMAGES_USE_F2FS := true
 TARGET_COPY_OUT_VENDOR := vendor
 TARGET_COPY_OUT_PRODUCT := product
+TARGET_COPY_OUT_ODM := odm
 
 # Dynamic partitions (Samsung: system/vendor/product/odm live inside "super")
 BOARD_SUPER_PARTITION_SIZE := $(or $(GEN_SUPER_SIZE),6442450944)
