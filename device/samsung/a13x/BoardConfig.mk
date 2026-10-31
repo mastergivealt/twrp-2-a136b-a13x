@@ -7,6 +7,8 @@ TARGET_ARCH_VARIANT := armv8-a
 TARGET_CPU_ABI := arm64-v8a
 TARGET_CPU_ABI2 :=
 TARGET_CPU_VARIANT := generic
+# 64-bit only recovery: tell the build system explicitly (otherwise it assumes zygote32 and errors)
+TARGET_SUPPORTS_64_BIT_APPS := true
 
 TARGET_BOARD_PLATFORM := $(or $(GEN_PLATFORM),mt6833)
 TARGET_BOOTLOADER_BOARD_NAME := $(or $(GEN_BOARD),mt6833)
