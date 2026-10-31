@@ -1,0 +1,8 @@
+Module                  Size  Used by
+wlan_drv_gen4m       2936832  0 
+wmt_chrdev_wifi        36864  1 wlan_drv_gen4m
+gps_drv               114688  2 
+fmradio_drv_mt6631_6635   245760  0 
+bt_drv_connac1x        49152  1 
+wmt_drv              1265664  6 wlan_drv_gen4m,wmt_chrdev_wifi,gps_drv,fmradio_drv_mt6631_6635,bt_drv_connac1x
+connfem                40960  0 

@@ -1,0 +1,63 @@
+add device 1: /dev/input/event0
+  name:     "meta_event"
+  events:
+    REL (0002): 0006  0007 
+  input props:
+    <none>
+add device 2: /dev/input/event5
+  name:     "grip_sensor"
+  events:
+    REL (0002): 0000  0001  0007  0008  0009 
+  input props:
+    <none>
+add device 3: /dev/input/event1
+  name:     "ACCDET"
+  events:
+    KEY (0001): 0072  0073  00e2  0246 
+    SW  (0005): 0002  0004  0006  0007 
+  input props:
+    <none>
+add device 4: /dev/input/event8
+  name:     "grip_notifier"
+  events:
+    REL (0002): 0000 
+  input props:
+    <none>
+add device 5: /dev/input/event3
+  name:     "sec_touchscreen"
+  events:
+    KEY (0001): 008f  0145* 014a* 01c7  02be 
+    ABS (0003): 0000  : value 0, min 0, max 719, fuzz 0, flat 0, resolution 0
+                0001  : value 0, min 0, max 1599, fuzz 0, flat 0, resolution 0
+                0018  : value 0, min 0, max 255, fuzz 0, flat 0, resolution 0
+                002f  : value 0, min 0, max 9, fuzz 0, flat 0, resolution 0
+                0035  : value 0, min 0, max 719, fuzz 0, flat 0, resolution 0
+                0036  : value 0, min 0, max 1599, fuzz 0, flat 0, resolution 0
+                0039  : value 0, min 0, max 65535, fuzz 0, flat 0, resolution 0
+                003a  : value 0, min 0, max 255, fuzz 0, flat 0, resolution 0
+  input props:
+    INPUT_PROP_DIRECT
+add device 6: /dev/input/event6
+  name:     "grip_notifier"
+  events:
+    REL (0002): 0000 
+  input props:
+    <none>
+add device 7: /dev/input/event7
+  name:     "grip_sensor_sub"
+  events:
+    REL (0002): 0000  0008  0009 
+  input props:
+    <none>
+add device 8: /dev/input/event4
+  name:     "sec_touchproximity"
+  events:
+    ABS (0003): 003e  : value 0, min 0, max -1, fuzz 0, flat 0, resolution 0
+  input props:
+    INPUT_PROP_DIRECT
+add device 9: /dev/input/event2
+  name:     "mtk-kpd"
+  events:
+    KEY (0001): 0072  0073  0074 
+  input props:
+    <none>

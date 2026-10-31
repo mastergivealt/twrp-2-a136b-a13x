@@ -1,0 +1,2 @@
+panel
+/sys/class/backlight/panel max=306

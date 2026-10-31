@@ -1,0 +1,15 @@
+ls: /vendor_dlkm/lib/modules: No such file or directory
+total 12064
+-rw-r--r-- 1 root root  112760 2008-12-31 15:00 bt_drv_connac1x.ko
+-rw-r--r-- 1 root root   81704 2008-12-31 15:00 connfem.ko
+-rw-r--r-- 1 root root  676768 2008-12-31 15:00 fmradio_drv_mt6631_6635.ko
+-rw-r--r-- 1 root root    8016 2008-12-31 15:00 fpsgo.ko
+-rw-r--r-- 1 root root  152096 2008-12-31 15:00 gps_drv.ko
+-rw-r--r-- 1 root root 1244728 2008-12-31 15:00 met.ko
+-rw-r--r-- 1 root root     441 2008-12-31 15:00 modules.alias
+-rw-r--r-- 1 root root     515 2008-12-31 15:00 modules.dep
+-rw-r--r-- 1 root root     132 2008-12-31 15:00 modules.load
+-rw-r--r-- 1 root root      55 2008-12-31 15:00 modules.softdep
+-rw-r--r-- 1 root root 7738624 2008-12-31 15:00 wlan_drv_gen4m.ko
+-rw-r--r-- 1 root root   93280 2008-12-31 15:00 wmt_chrdev_wifi.ko
+-rw-r--r-- 1 root root 2212864 2008-12-31 15:00 wmt_drv.ko
