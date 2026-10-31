@@ -30,3 +30,14 @@ Rooted with Magisk? If Magisk is installed in the *recovery* partition rather th
 Send me: the failed Actions log, `probe/lsmod.txt`, `probe/modules_dir.txt`. Black screen or dead touch usually means
 the display/touch driver is a kernel module that is not inside the recovery ramdisk; that needs the modules copied in.
 Decryption (`crypto=true`) is a second step and often needs extra work on Android 14 Samsung firmware.
+
+## Why recovery may hang at the Samsung logo (research notes)
+Other Samsung MediaTek TWRP ports report the same symptom. Causes seen in the wild:
+- ramdisk compression the stock kernel cannot unpack (the A13 4G tree switched to lzma for this) -> the workflow now
+  re-packs the ramdisk with the SAME compression as the stock recovery and re-adds the MediaTek `ROOTFS` header if stock had it;
+- a stock kernel that boots SELinux enforcing and cannot be set permissive: several Samsung MTK ports say
+  "needs permissive kernel" and ship a patched kernel; this tree uses the stock kernel unchanged;
+- display / touch drivers that are modules (A14 MT6769 build: "touch not working, use USB mouse").
+Every run now prints and uploads `stock_report.txt` (header, compression, ramdisk files, kernel config bits).
+Use `include_vbmeta=false` (default) first; a patched vbmeta is only needed if the device complains about verification.
+After a failed recovery boot, boot normally and run the probe again: it saves `/sys/fs/pstore` and `last_kmsg`.

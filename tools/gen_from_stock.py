@@ -47,8 +47,15 @@ def main():
     open(os.path.join(pre, 'kernel'), 'wb').write(kernel)
     if dtb: open(os.path.join(pre, 'dtb'), 'wb').write(dtb)
 
-    if ramdisk[:2] == b'\x1f\x8b': comp = 'gzip'
-    elif ramdisk[:4] in (b'\x02\x21\x4c\x18', b'\x04\x22\x4d\x18'): comp = 'lz4'
+    MTK = b'\x88\x16\x88\x58'   # MediaTek 512-byte partition header magic
+    mtk_ramdisk = ramdisk[:4] == MTK
+    mtk_kernel = kernel[:4] == MTK
+    rd = ramdisk[512:] if mtk_ramdisk else ramdisk
+    mtk_name = ramdisk[8:40].split(b'\0')[0].decode('ascii', 'replace') if mtk_ramdisk else ''
+    if rd[:2] == b'\x1f\x8b': comp = 'gzip'
+    elif rd[:4] in (b'\x02\x21\x4c\x18', b'\x04\x22\x4d\x18'): comp = 'lz4'
+    elif rd[:6] == b'\xfd7zXZ\x00': comp = 'xz'
+    elif rd[:3] == b'\x5d\x00\x00': comp = 'lzma'
     else: comp = 'unknown'
 
     codename, platform, board, super_size = 'a13x', 'mt6833', 'mt6833', 0
@@ -79,12 +86,17 @@ def main():
          'GEN_DTB_OFFSET := %s' % h(offs['dtb']),
          'GEN_HAS_DTB := %s' % ('true' if dtb else 'false'),
          'GEN_RAMDISK_LZ4 := %s' % ('true' if comp == 'lz4' else 'false'),
+         'GEN_RAMDISK_COMP := %s' % comp,
+         'GEN_MTK_RAMDISK := %s' % ('true' if mtk_ramdisk else 'false'),
+         'GEN_MTK_RAMDISK_NAME := %s' % (mtk_name or 'ROOTFS'),
          'GEN_CMDLINE := %s' % cmdline.replace('#', '\\#').replace('$', '$$')]
     if super_size: L.append('GEN_SUPER_SIZE := %d' % super_size)
     open(os.path.join(out, 'generated.mk'), 'w').write('\n'.join(L) + '\n')
 
     print('stock image: header v%d, page %d, base %s, ramdisk %s, kernel %d B, dtb %d B' %
           (ver, page, h(base), comp, len(kernel), len(dtb)))
+    print('kernel head:', kernel[:16].hex(), '| ramdisk head:', ramdisk[:16].hex(),
+          '| mtk kernel hdr:', mtk_kernel, '| mtk ramdisk hdr:', mtk_ramdisk, mtk_name)
     print('cmdline:', cmdline)
     print('codename=%s platform=%s super=%s' % (codename, platform, super_size or 'default'))
 

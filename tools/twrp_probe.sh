@@ -19,6 +19,11 @@ ls -l /vendor/lib/modules /vendor_dlkm/lib/modules > $O/modules_dir.txt 2>&1
 ls /sys/class/backlight > $O/backlight.txt 2>&1
 for b in /sys/class/backlight/*; do echo "$b max=$(cat $b/max_brightness 2>/dev/null)"; done >> $O/backlight.txt
 getevent -p > $O/getevent.txt 2>&1
+cp /proc/config.gz $O/config.gz 2>/dev/null
+ls -l /sys/fs/pstore > $O/pstore_list.txt 2>&1
+cat /sys/fs/pstore/* > $O/pstore.txt 2>/dev/null
+cp /proc/last_kmsg $O/last_kmsg.txt 2>/dev/null
+getenforce > $O/getenforce.txt 2>&1
 df > $O/df.txt 2>&1
 for p in recovery boot vbmeta; do
   dd if=/dev/block/by-name/$p of=$O/$p.img bs=1M 2>/dev/null && echo "saved $p.img"

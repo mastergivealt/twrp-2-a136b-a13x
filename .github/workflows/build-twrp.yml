@@ -6,6 +6,11 @@ on:
       manifest_branch:
         description: "TWRP minimal manifest branch"
         default: "twrp-12.1"
+      include_vbmeta:
+        description: "Also flash a verification-disabled vbmeta (leave false unless you know you need it)"
+        type: choice
+        options: ["false", "true"]
+        default: "false"
       crypto:
         description: "Try data decryption (false = safest first boot test)"
         type: choice
@@ -24,6 +29,13 @@ jobs:
         run: |
           test -f stock/recovery.img || { echo "::error::put your stock recovery.img into stock/ (see README)"; exit 1; }
           ls -l stock probe || true
+
+      - name: Analyze the stock recovery (report)
+        run: |
+          sudo apt-get install -y lz4 cpio xz-utils >/dev/null
+          mkdir -p out
+          python3 tools/analyze_stock.py stock/recovery.img | tee out/stock_report.txt
+          { echo '### Stock recovery report'; echo '```'; cat out/stock_report.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Free disk space
         uses: jlumbroso/free-disk-space@main
@@ -77,6 +89,20 @@ jobs:
           lunch twrp_a13x-eng
           mka recoveryimage -j"$(nproc)"
 
+      - name: Make the ramdisk match the stock one (compression + MediaTek header)
+        run: |
+          cd ~/twrp
+          G=device/samsung/a13x/generated.mk
+          COMP=$(sed -n 's/^GEN_RAMDISK_COMP := //p' $G)
+          IMG=$(find out/target/product -name recovery.img | head -n1)
+          ARGS=""
+          case "$COMP" in gzip|lz4|xz|lzma) ARGS="--comp $COMP";; esac
+          if grep -q "GEN_MTK_RAMDISK := true" $G; then
+            ARGS="$ARGS --mtk $(sed -n 's/^GEN_MTK_RAMDISK_NAME := //p' $G)"
+          fi
+          echo "fix_ramdisk args: $ARGS"
+          python3 "$GITHUB_WORKSPACE"/tools/fix_ramdisk.py "$IMG" $ARGS
+
       - name: Package for Odin
         run: |
           set -e
@@ -88,7 +114,7 @@ jobs:
           # Samsung bootloaders want this marker at the end of boot-type images
           printf 'SEANDROIDENFORCE' >> recovery.img
           FILES="recovery.img"
-          if [ -f ../stock/vbmeta.img ]; then
+          if [ "${{ inputs.include_vbmeta }}" = "true" ] && [ -f ../stock/vbmeta.img ]; then
             python3 ../tools/patch_vbmeta.py ../stock/vbmeta.img vbmeta.img
             FILES="recovery.img vbmeta.img"
           fi
@@ -103,6 +129,7 @@ jobs:
           name: twrp-a136b
           path: |
             out/*
+            out/stock_report.txt
             ~/twrp/out/target/product/*/recovery.img
             ~/twrp/out/target/product/*/obj/PACKAGING/recovery_patch_intermediates/*
             ~/twrp/device/samsung/a13x/generated.mk
