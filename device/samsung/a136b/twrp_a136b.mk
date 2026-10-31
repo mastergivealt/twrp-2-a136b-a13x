@@ -1,7 +1,7 @@
-# Inherit from the TWRP common product
-$(call inherit-product, $(SRC_TARGET_DIR)/product/base.mk)
-$(call inherit-product, $(SRC_TARGET_DIR)/product/embedded.mk)
-$(call inherit-product, $(SRC_TARGET_DIR)/product/full_base_telephony.mk)
+# The TWRP minimal manifest strips several AOSP product files, so inherit them only if present.
+$(call inherit-product-if-exists, $(SRC_TARGET_DIR)/product/base.mk)
+$(call inherit-product-if-exists, $(SRC_TARGET_DIR)/product/embedded.mk)
+$(call inherit-product-if-exists, $(SRC_TARGET_DIR)/product/full_base_telephony.mk)
 $(call inherit-product, vendor/twrp/config/common.mk)
 
 -include device/samsung/a136b/generated.mk
