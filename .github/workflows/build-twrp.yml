@@ -61,11 +61,11 @@ jobs:
       - name: Add device tree and generate it from the stock recovery
         run: |
           cd ~/twrp
-          mkdir -p device/samsung/a136b
-          cp -r "$GITHUB_WORKSPACE"/device/samsung/a136b/. device/samsung/a136b/
+          mkdir -p device/samsung/a13x
+          cp -r "$GITHUB_WORKSPACE"/device/samsung/a13x/. device/samsung/a13x/
           python3 "$GITHUB_WORKSPACE"/tools/gen_from_stock.py \
-            "$GITHUB_WORKSPACE"/stock/recovery.img device/samsung/a136b "$GITHUB_WORKSPACE"/probe
-          cat device/samsung/a136b/generated.mk
+            "$GITHUB_WORKSPACE"/stock/recovery.img device/samsung/a13x "$GITHUB_WORKSPACE"/probe
+          cat device/samsung/a13x/generated.mk
 
       - name: Build recovery image
         run: |
@@ -74,7 +74,7 @@ jobs:
           export LC_ALL=C
           export CRYPTO="${{ inputs.crypto }}"
           source build/envsetup.sh
-          lunch twrp_a136b-eng
+          lunch twrp_a13x-eng
           mka recoveryimage -j"$(nproc)"
 
       - name: Package for Odin
@@ -105,5 +105,5 @@ jobs:
             out/*
             ~/twrp/out/target/product/*/recovery.img
             ~/twrp/out/target/product/*/obj/PACKAGING/recovery_patch_intermediates/*
-            ~/twrp/device/samsung/a136b/generated.mk
+            ~/twrp/device/samsung/a13x/generated.mk
           if-no-files-found: warn

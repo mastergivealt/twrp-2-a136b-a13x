@@ -1,4 +1,4 @@
-# TWRP for Samsung Galaxy A13 5G (SM-A136B) - GitHub Actions build
+# TWRP for Samsung Galaxy A13 5G (SM-A136B, codename a13x) - GitHub Actions build
 
 Status: **untested first draft.** It builds the recovery from *your own stock recovery.img* (kernel, dtb,
 boot header and cmdline are read from it, nothing is guessed), but nobody has booted it yet.

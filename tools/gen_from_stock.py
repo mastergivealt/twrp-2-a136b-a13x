@@ -51,7 +51,7 @@ def main():
     elif ramdisk[:4] in (b'\x02\x21\x4c\x18', b'\x04\x22\x4d\x18'): comp = 'lz4'
     else: comp = 'unknown'
 
-    codename, platform, board, super_size = 'a136b', 'mt6833', 'mt6833', 0
+    codename, platform, board, super_size = 'a13x', 'mt6833', 'mt6833', 0
     if probe and os.path.isdir(probe):
         gp = os.path.join(probe, 'getprop.txt')
         if os.path.exists(gp):
