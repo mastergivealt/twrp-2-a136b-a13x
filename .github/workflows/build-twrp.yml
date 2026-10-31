@@ -1,0 +1,109 @@
+name: Build TWRP (SM-A136B)
+
+on:
+  workflow_dispatch:
+    inputs:
+      manifest_branch:
+        description: "TWRP minimal manifest branch"
+        default: "twrp-12.1"
+      crypto:
+        description: "Try data decryption (false = safest first boot test)"
+        type: choice
+        options: ["false", "true"]
+        default: "false"
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 340
+    steps:
+      - name: Checkout this repo
+        uses: actions/checkout@v4
+
+      - name: Check that the stock recovery is present
+        run: |
+          test -f stock/recovery.img || { echo "::error::put your stock recovery.img into stock/ (see README)"; exit 1; }
+          ls -l stock probe || true
+
+      - name: Free disk space
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: false
+          docker-images: true
+          swap-storage: true
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git-core gnupg flex bison build-essential zip curl zlib1g-dev \
+            libc6-dev-i386 libncurses5 lib32ncurses5-dev x11proto-core-dev libx11-dev lib32z1-dev \
+            libgl1-mesa-dev libxml2-utils xsltproc unzip fontconfig python3 python-is-python3 \
+            bc cpio lz4 ccache rsync libssl-dev openjdk-11-jdk
+          mkdir -p ~/bin
+          curl -s https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
+          chmod +x ~/bin/repo
+          git config --global user.name "twrp-ci"
+          git config --global user.email "twrp-ci@example.invalid"
+          git config --global color.ui false
+
+      - name: Sync TWRP minimal manifest
+        run: |
+          export PATH=~/bin:$PATH
+          mkdir -p ~/twrp && cd ~/twrp
+          repo init --depth=1 -u https://github.com/minimal-manifest-twrp/platform_manifest_twrp_aosp.git \
+            -b "${{ inputs.manifest_branch }}"
+          repo sync -c -j"$(nproc)" --force-sync --no-clone-bundle --no-tags
+
+      - name: Add device tree and generate it from the stock recovery
+        run: |
+          cd ~/twrp
+          mkdir -p device/samsung/a136b
+          cp -r "$GITHUB_WORKSPACE"/device/samsung/a136b/. device/samsung/a136b/
+          python3 "$GITHUB_WORKSPACE"/tools/gen_from_stock.py \
+            "$GITHUB_WORKSPACE"/stock/recovery.img device/samsung/a136b "$GITHUB_WORKSPACE"/probe
+          cat device/samsung/a136b/generated.mk
+
+      - name: Build recovery image
+        run: |
+          cd ~/twrp
+          export ALLOW_MISSING_DEPENDENCIES=true
+          export LC_ALL=C
+          export CRYPTO="${{ inputs.crypto }}"
+          source build/envsetup.sh
+          lunch twrp_a136b-eng
+          mka recoveryimage -j"$(nproc)"
+
+      - name: Package for Odin
+        run: |
+          set -e
+          mkdir -p "$GITHUB_WORKSPACE/out"
+          IMG=$(find ~/twrp/out/target/product -name recovery.img | head -n1)
+          test -n "$IMG"
+          cp "$IMG" "$GITHUB_WORKSPACE/out/recovery.img"
+          cd "$GITHUB_WORKSPACE/out"
+          # Samsung bootloaders want this marker at the end of boot-type images
+          printf 'SEANDROIDENFORCE' >> recovery.img
+          FILES="recovery.img"
+          if [ -f ../stock/vbmeta.img ]; then
+            python3 ../tools/patch_vbmeta.py ../stock/vbmeta.img vbmeta.img
+            FILES="recovery.img vbmeta.img"
+          fi
+          tar -H ustar -c $FILES > TWRP_A136B_AP.tar
+          md5sum TWRP_A136B_AP.tar > TWRP_A136B_AP.tar.md5
+          ls -l
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: twrp-a136b
+          path: |
+            out/*
+            ~/twrp/out/target/product/*/recovery.img
+            ~/twrp/out/target/product/*/obj/PACKAGING/recovery_patch_intermediates/*
+            ~/twrp/device/samsung/a136b/generated.mk
+          if-no-files-found: warn
