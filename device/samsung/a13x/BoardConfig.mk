@@ -1,14 +1,23 @@
 DEVICE_PATH := device/samsung/a13x
 -include $(DEVICE_PATH)/generated.mk
 
-# ---- Arch (Dimensity 700 / MT6833) ----
+# ---- Arch (Dimensity 700 / MT6833): the KERNEL is arm64; userspace bitness follows the stock recovery ----
+ifeq ($(GEN_USERSPACE_BITS),32)
+# stock recovery is 32-bit userspace on a 64-bit kernel
+TARGET_ARCH := arm
+TARGET_ARCH_VARIANT := armv7-a-neon
+TARGET_CPU_ABI := armeabi-v7a
+TARGET_CPU_ABI2 := armeabi
+TARGET_CPU_VARIANT := generic
+TARGET_USES_64_BIT_BINDER := true
+else
 TARGET_ARCH := arm64
 TARGET_ARCH_VARIANT := armv8-a
 TARGET_CPU_ABI := arm64-v8a
 TARGET_CPU_ABI2 :=
 TARGET_CPU_VARIANT := generic
-# 64-bit only recovery: tell the build system explicitly (otherwise it assumes zygote32 and errors)
 TARGET_SUPPORTS_64_BIT_APPS := true
+endif
 
 TARGET_BOARD_PLATFORM := $(or $(GEN_PLATFORM),mt6833)
 TARGET_BOOTLOADER_BOARD_NAME := $(or $(GEN_BOARD),mt6833)

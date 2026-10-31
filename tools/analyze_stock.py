@@ -36,6 +36,18 @@ def newc_names(raw):
         i = align(i + filesize, 4)
     return names
 
+def newc_files(raw, wanted):
+    out, i = {}, 0
+    while raw[i:i + 6] in (b'070701', b'070702'):
+        f = raw[i + 6:i + 110]
+        filesize = int(f[48:56], 16); namesize = int(f[88:96], 16)
+        name = raw[i + 110:i + 110 + namesize - 1].decode('utf8', 'replace')
+        if name == 'TRAILER!!!': break
+        i = align(i + 110 + namesize, 4)
+        if name in wanted: out[name] = raw[i:i + filesize]
+        i = align(i + filesize, 4)
+    return out
+
 def ikconfig(kernel):
     data = kernel[512:] if kernel[:4] == MTK else kernel
     blobs = [data]
@@ -94,6 +106,11 @@ if raw:
         sum(1 for n in nm if '/lib64/' in n or n.startswith('lib64/')),
         sum(1 for n in nm if ('/lib/' in n or n.startswith('lib/')) and '/lib64/' not in n),
         any(n.endswith('bin/linker64') for n in nm), any(n.endswith('bin/linker') for n in nm)))
+if raw:
+    want = ['init.recovery.mt6833.rc', 'init.recovery.samsung.rc', 'system/etc/recovery.fstab', 'sepolicy_version']
+    for n, data in newc_files(raw, want).items():
+        print('== file in stock ramdisk:', n)
+        print(data.decode('utf8', 'replace')[:6000])
 cfg = ikconfig(kernel)
 if cfg:
     print('== kernel config (embedded)')

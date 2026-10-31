@@ -7,6 +7,31 @@ import os, re, struct, sys
 
 def align(x, p): return (x + p - 1) // p * p
 
+def newc_names(raw):
+    names, i = [], 0
+    while raw[i:i + 6] in (b'070701', b'070702'):
+        f = raw[i + 6:i + 110]
+        filesize = int(f[48:56], 16); namesize = int(f[88:96], 16)
+        name = raw[i + 110:i + 110 + namesize - 1].decode('utf8', 'replace')
+        if name == 'TRAILER!!!': break
+        names.append(name)
+        i = align(i + 110 + namesize, 4)
+        i = align(i + filesize, 4)
+    return names
+
+def userspace_bits(rd, comp):
+    import subprocess
+    cmd = {'gzip': ['gzip', '-dc'], 'lz4': ['lz4', '-dc'], 'xz': ['xz', '-dc'], 'lzma': ['xz', '-dc']}.get(comp)
+    try:
+        raw = subprocess.run(cmd, input=rd, stdout=subprocess.PIPE, stderr=subprocess.PIPE).stdout if cmd else b''
+        names = newc_names(raw)
+    except Exception:
+        return 64, 'unknown (could not read stock ramdisk), assuming 64'
+    n64 = sum(1 for n in names if '/lib64/' in n or n.startswith('lib64/'))
+    n32 = sum(1 for n in names if ('/lib/' in n or n.startswith('lib/')) and '/lib64/' not in n)
+    if n64 == 0 and n32 > 0: return 32, 'stock recovery has %d lib and 0 lib64 entries -> 32-bit userspace' % n32
+    return 64, 'stock recovery has %d lib64 entries -> 64-bit userspace' % n64
+
 def main():
     img, out = sys.argv[1], sys.argv[2]
     probe = sys.argv[3] if len(sys.argv) > 3 else None
@@ -58,6 +83,7 @@ def main():
     elif rd[:3] == b'\x5d\x00\x00': comp = 'lzma'
     else: comp = 'unknown'
 
+    bits, bits_why = userspace_bits(rd, comp)
     codename, platform, board, super_size = 'a13x', 'mt6833', 'mt6833', 0
     if probe and os.path.isdir(probe):
         gp = os.path.join(probe, 'getprop.txt')
@@ -87,6 +113,7 @@ def main():
          'GEN_HAS_DTB := %s' % ('true' if dtb else 'false'),
          'GEN_RAMDISK_LZ4 := %s' % ('true' if comp == 'lz4' else 'false'),
          'GEN_RAMDISK_COMP := %s' % comp,
+         'GEN_USERSPACE_BITS := %d' % bits,
          'GEN_MTK_RAMDISK := %s' % ('true' if mtk_ramdisk else 'false'),
          'GEN_MTK_RAMDISK_NAME := %s' % (mtk_name or 'ROOTFS'),
          'GEN_CMDLINE := %s' % cmdline.replace('#', '\\#').replace('$', '$$')]
@@ -97,6 +124,7 @@ def main():
           (ver, page, h(base), comp, len(kernel), len(dtb)))
     print('kernel head:', kernel[:16].hex(), '| ramdisk head:', ramdisk[:16].hex(),
           '| mtk kernel hdr:', mtk_kernel, '| mtk ramdisk hdr:', mtk_ramdisk, mtk_name)
+    print('userspace:', bits_why)
     print('cmdline:', cmdline)
     print('codename=%s platform=%s super=%s' % (codename, platform, super_size or 'default'))
 
