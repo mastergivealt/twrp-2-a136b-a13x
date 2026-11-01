@@ -6,6 +6,12 @@ on:
       manifest_branch:
         description: "TWRP minimal manifest branch"
         default: "twrp-12.1"
+      alt_tree_repo:
+        description: "OPTIONAL: build someone else's device tree instead of ours (git URL), e.g. https://github.com/Matheus-TestUser1/twrp_android_device_samsung_a13x"
+        default: ""
+      alt_tree_branch:
+        description: "Branch of the alternative tree"
+        default: "android-12.1-clean"
       include_vbmeta:
         description: "Also flash a verification-disabled vbmeta (leave false unless you know you need it)"
         type: choice
@@ -74,10 +80,16 @@ jobs:
         run: |
           cd ~/twrp
           mkdir -p device/samsung/a13x
-          cp -r "$GITHUB_WORKSPACE"/device/samsung/a13x/. device/samsung/a13x/
-          python3 "$GITHUB_WORKSPACE"/tools/gen_from_stock.py \
-            "$GITHUB_WORKSPACE"/stock/recovery.img device/samsung/a13x "$GITHUB_WORKSPACE"/probe
-          cat device/samsung/a13x/generated.mk
+          if [ -n "${{ inputs.alt_tree_repo }}" ]; then
+            echo "Using ALTERNATIVE tree: ${{ inputs.alt_tree_repo }} (${{ inputs.alt_tree_branch }})"
+            git clone --depth 1 -b "${{ inputs.alt_tree_branch }}" "${{ inputs.alt_tree_repo }}" device/samsung/a13x
+            ls -la device/samsung/a13x device/samsung/a13x/prebuilt || true
+          else
+            cp -r "$GITHUB_WORKSPACE"/device/samsung/a13x/. device/samsung/a13x/
+            python3 "$GITHUB_WORKSPACE"/tools/gen_from_stock.py \
+              "$GITHUB_WORKSPACE"/stock/recovery.img device/samsung/a13x "$GITHUB_WORKSPACE"/probe
+            cat device/samsung/a13x/generated.mk
+          fi
 
       - name: Build recovery image
         run: |
@@ -93,6 +105,7 @@ jobs:
         run: |
           cd ~/twrp
           G=device/samsung/a13x/generated.mk
+          if [ ! -f "$G" ]; then echo "alternative tree: leaving the image exactly as built"; exit 0; fi
           COMP=$(sed -n 's/^GEN_RAMDISK_COMP := //p' $G)
           IMG=$(find out/target/product -name recovery.img | head -n1)
           ARGS=""

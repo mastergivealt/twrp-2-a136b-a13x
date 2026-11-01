@@ -27,7 +27,8 @@ TARGET_NO_RADIOIMAGE := true
 # ---- Kernel / boot image: everything below comes from the STOCK recovery.img ----
 TARGET_NO_KERNEL := false
 TARGET_PREBUILT_KERNEL := $(DEVICE_PATH)/prebuilt/kernel
-BOARD_KERNEL_CMDLINE := $(GEN_CMDLINE)
+# the stock Samsung kernel boots SELinux enforcing; TWRP needs permissive (init honours this on eng builds)
+BOARD_KERNEL_CMDLINE := $(GEN_CMDLINE) androidboot.selinux=permissive
 BOARD_BOOTIMG_HEADER_VERSION := $(GEN_HEADER_VERSION)
 BOARD_KERNEL_BASE := $(GEN_BASE)
 BOARD_KERNEL_PAGESIZE := $(GEN_PAGESIZE)
