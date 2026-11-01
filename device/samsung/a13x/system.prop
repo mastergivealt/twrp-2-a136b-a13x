@@ -1,0 +1,4 @@
+# Placeholder for the Samsung a13x device tree.
+# The generated tree expects these files to exist even when the stock recovery
+# does not provide usable property files for the recovery image build.
+# Keeping them empty is harmless for a TWRP recovery build.
